@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>P2P</title>
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icons/icon-192.png" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<meta name="theme-color" content="#0a0a0a" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="P2P" />
+<link rel="stylesheet" href="style.css" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<!-- SITE GATE — a soft deterrent, not real security. Anyone who views page source can find
+     the password; this is meant to keep casual/unwanted visitors from landing on the site,
+     not to withstand a determined attacker. -->
+<div id="site-gate" class="gate-shell">
+  <div class="gate-card">
+    <span class="wordmark">P2P</span>
+    <span class="tagline">Physique to Profit</span>
+    <p class="gate-copy">This is a private space. Enter the access password to continue.</p>
+    <div id="gate-error" class="auth-error hidden"></div>
+    <form id="gate-form">
+      <div class="field">
+        <label for="gate-password">Access Password</label>
+        <input type="password" id="gate-password" placeholder="••••••••" autocomplete="off" required />
+      </div>
+      <button type="submit" class="btn-primary">Enter</button>
+    </form>
+  </div>
+</div>
+<script>
+  // Runs immediately during page parse so returning visitors don't see a flash of the gate.
+  if (localStorage.getItem('p2p_gate_passed') === 'true') {
+    document.getElementById('site-gate').style.display = 'none';
+  }
+</script>
+
+<!-- AUTH SCREEN -->
+<div id="auth-shell" class="auth-shell hidden">
+  <div class="auth-visual">
+    <svg class="auth-visual-art" viewBox="0 0 600 700" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+
+      <defs>
+        <filter id="grain">
+          <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch" result="noise" />
+          <feColorMatrix in="noise" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.09 0" />
+        </filter>
+        <radialGradient id="authGlow" cx="50%" cy="38%" r="55%">
+          <stop offset="0%" stop-color="#d4a72c" stop-opacity="0.30" />
+          <stop offset="100%" stop-color="#d4a72c" stop-opacity="0" />
+        </radialGradient>
+        <linearGradient id="authFade" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="60%" stop-color="#0a0a0a" stop-opacity="0" />
+          <stop offset="100%" stop-color="#0a0a0a" stop-opacity="1" />
+        </linearGradient>
+      </defs>
+      <rect width="600" height="700" fill="#0a0a0a" />
+      <rect width="600" height="700" fill="url(#authGlow)" class="auth-glow-pulse" />
+      <g stroke="#f5f4ef" stroke-width="7" fill="none" stroke-linecap="round" opacity="0.9">
+        <line x1="90" y1="350" x2="510" y2="350" />
+      </g>
+      <g fill="#f5f4ef">
+        <rect x="55" y="290" width="24" height="120" rx="5" opacity="0.95" />
+        <rect x="24" y="265" width="22" height="170" rx="5" opacity="0.75" />
+        <rect x="521" y="290" width="24" height="120" rx="5" opacity="0.95" />
+        <rect x="554" y="265" width="22" height="170" rx="5" opacity="0.75" />
+      </g>
+      <circle cx="300" cy="350" r="3" fill="#d4a72c" opacity="0.9" />
+      <rect width="600" height="700" filter="url(#grain)" />
+      <rect width="600" height="700" fill="url(#authFade)" />
+    </svg>
+    <div class="auth-visual-caption">
+      <span class="wordmark">P2P</span>
+      <p>Physique to Profit — accountability, community, results.</p>
+    </div>
+  </div>
+
+  <div class="auth-form-pane">
+    <div class="auth-card">
+      <span class="wordmark auth-card-wordmark">P2P</span>
+      <span class="tagline">Physique to Profit</span>
+
+      <div id="auth-error" class="auth-error hidden"></div>
+
+      <form id="auth-form">
+        <div class="field hidden" id="name-field">
+          <label for="name-input">Name</label>
+          <input type="text" id="name-input" placeholder="Full name" autocomplete="name" />
+        </div>
+        <div class="field">
+          <label for="email-input">Email</label>
+          <input type="email" id="email-input" placeholder="you@email.com" autocomplete="email" required />
+        </div>
+        <div class="field">
+          <label for="password-input">Password</label>
+          <input type="password" id="password-input" placeholder="••••••••" autocomplete="current-password" required minlength="6" />
+        </div>
+        <button type="submit" class="btn-primary" id="auth-submit">Sign In</button>
+      </form>
+
+      <div class="auth-toggle">
+        <span id="toggle-text">New here?</span>
+        <button type="button" id="toggle-btn">Create an account</button>
+      </div>
+
+      <div class="auth-note">Members-only space for P2P. Your login is private to you.</div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-shell" class="hidden">
+
+  <nav class="sidenav" id="sidenav">
+    <div class="sidenav-top">
+      <div class="wordmark small">P2P</div>
+      <div class="tagline">Physique to Profit</div>
+    </div>
+    <button class="nav-item active" data-view="wins">
+      <span class="nav-dot dot-gold"></span> Wins
+    </button>
+    <button class="nav-item" data-view="board">
+      <span class="nav-dot dot-blue"></span> The Board
+    </button>
+    <button class="nav-item" data-view="introductions">
+      <span class="nav-dot dot-teal"></span> Introductions
+    </button>
+    <button class="nav-item" data-view="chat">
+      <span class="nav-dot dot-plain"></span> Live Chat
+    </button>
+    <button class="nav-item" data-view="messages">
+      <span class="nav-dot dot-purple"></span> Members <span class="nav-badge hidden" id="dm-unread-badge"></span>
+    </button>
+    <button class="nav-item" data-view="checkin">
+      <span class="nav-dot dot-green"></span> Daily Check-In
+    </button>
+    <button class="nav-item" data-view="leaderboard">
+      <span class="nav-dot dot-amber"></span> Leaderboard
+    </button>
+    <button class="nav-item" data-view="announcements">
+      <span class="nav-dot dot-red"></span> Announcements
+    </button>
+    <button class="nav-item hidden" data-view="admin" id="nav-admin">
+      <span class="nav-dot dot-plain"></span> Admin
+    </button>
+    <div class="sidenav-bottom">
+      <div class="profile-row" id="profile-row">
+        <div class="avatar-circle" id="sidenav-avatar"></div>
+        <span class="member-name" id="current-member"></span>
+      </div>
+      <button class="btn-ghost" id="edit-profile-btn">Edit Profile</button>
+      <button class="btn-ghost" id="signout-btn">Sign Out</button>
+    </div>
+  </nav>
+
+  <button class="mobile-nav-toggle" id="mobile-nav-toggle">☰ Menu</button>
+
+  <div class="notif-bell-wrap">
+    <button class="notif-bell-btn" id="notif-bell-btn">
+      🔔<span class="notif-bell-badge hidden" id="notif-bell-badge"></span>
+    </button>
+    <div class="notif-dropdown hidden" id="notif-dropdown">
+      <div class="notif-dropdown-header">
+        <span>Notifications</span>
+        <button id="notif-mark-all-read">Mark all read</button>
+      </div>
+      <div class="notif-list" id="notif-list"></div>
+    </div>
+  </div>
+
+  <main class="main-area">
+
+    <!-- WINS VIEW -->
+    <section class="view" id="view-wins" data-accent="gold">
+      <div class="shell">
+        <div class="view-header">
+          <h1>Wins</h1>
+          <p>Post it. Big or small — if it moved you forward, it counts.</p>
+        </div>
+        <div class="composer" id="composer-wins">
+          <input type="text" class="title-input" placeholder="Headline (optional)" maxlength="120" />
+          <textarea placeholder="What's the win?" maxlength="2000"></textarea>
+          <div class="composer-footer">
+            <span class="char-count">0 / 2000</span>
+            <button class="btn-post">Post Win</button>
+          </div>
+        </div>
+        <input type="text" id="search-wins" class="post-search" placeholder="Search wins..." />
+        <div class="feed-list" id="feed-wins"></div>
+      </div>
+    </section>
+
+    <!-- BOARD VIEW -->
+    <section class="view hidden" id="view-board" data-accent="blue">
+      <div class="shell">
+        <div class="view-header">
+          <h1>The Board</h1>
+          <p>Links, recommendations, questions — anything worth sharing with the group.</p>
+        </div>
+        <div class="composer" id="composer-board">
+          <input type="text" class="title-input" placeholder="Headline (optional)" maxlength="120" />
+          <textarea placeholder="Share a link, ask a question, drop a recommendation..." maxlength="2000"></textarea>
+          <div class="composer-footer">
+            <span class="char-count">0 / 2000</span>
+            <button class="btn-post">Post</button>
+          </div>
+        </div>
+        <input type="text" id="search-board" class="post-search" placeholder="Search the board..." />
+        <div class="feed-list" id="feed-board"></div>
+      </div>
+    </section>
+
+    <!-- INTRODUCTIONS VIEW -->
+    <section class="view hidden" id="view-introductions" data-accent="teal">
+      <div class="shell">
+        <div class="view-header">
+          <h1>Introductions</h1>
+          <p>New to P2P? Post one introduction so the group knows who you are.</p>
+        </div>
+        <div class="composer" id="composer-introductions">
+          <input type="text" class="title-input" placeholder="Your name / where you're from (optional)" maxlength="120" />
+          <textarea placeholder="Introduce yourself — who you are, what you're working on, what brought you here..." maxlength="2000"></textarea>
+          <div class="composer-footer">
+            <span class="char-count">0 / 2000</span>
+            <button class="btn-post">Post Introduction</button>
+          </div>
+        </div>
+        <input type="text" id="search-introductions" class="post-search" placeholder="Search introductions..." />
+        <div class="feed-list" id="feed-introductions"></div>
+      </div>
+    </section>
+
+    <!-- CHAT VIEW -->
+    <section class="view hidden" id="view-chat" data-accent="plain">
+      <div class="chat-shell">
+        <div class="view-header">
+          <h1>Live Chat</h1>
+          <p>Real-time group chat. Tap Reply to respond to a specific message.</p>
+        </div>
+        <div class="chat-messages" id="chat-messages"></div>
+        <div class="reply-banner hidden" id="reply-banner">
+          <span id="reply-banner-text"></span>
+          <button id="reply-cancel">✕</button>
+        </div>
+        <div class="chat-input-row">
+          <input type="text" id="chat-input" placeholder="Type a message..." maxlength="1000" />
+          <button class="btn-post" id="chat-send">Send</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- MEMBERS VIEW (directory + DMs) -->
+    <section class="view hidden" id="view-messages" data-accent="purple">
+      <div class="messages-shell">
+        <div class="dm-list" id="dm-list">
+          <div class="view-header dm-list-header">
+            <h1>Members</h1>
+          </div>
+          <input type="text" id="member-search" class="member-search" placeholder="Search members..." />
+          <div class="dm-conversation-list" id="dm-conversation-list"></div>
+        </div>
+        <div class="dm-thread" id="dm-thread">
+          <div class="dm-thread-empty" id="dm-thread-empty">Pick a member to message.</div>
+          <div class="dm-thread-active hidden" id="dm-thread-active">
+            <div class="dm-thread-header" id="dm-thread-header"></div>
+            <div class="dm-thread-messages" id="dm-thread-messages"></div>
+            <div class="chat-input-row">
+              <input type="text" id="dm-input" placeholder="Type a message..." maxlength="2000" />
+              <button class="btn-post" id="dm-send">Send</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CHECK-IN VIEW -->
+    <section class="view hidden" id="view-checkin" data-accent="green">
+      <div class="shell">
+        <div class="view-header">
+          <h1>Command Center</h1>
+          <p>Check off today's list across every area that matters. Consistency is the whole game.</p>
+        </div>
+
+        <label class="clients-toggle-row">
+          <input type="checkbox" id="clients-toggle" checked />
+          <span>I currently coach clients (shows the client check-in item below)</span>
+        </label>
+
+        <div class="streak-card">
+          <div class="streak-block">
+            <div class="streak-num" id="streak-count">0</div>
+            <div class="streak-label">Day Streak</div>
+          </div>
+          <div class="level-block">
+            <div class="level-name" id="level-name">Rookie</div>
+            <div class="level-progress-track">
+              <div class="level-progress-fill" id="level-progress-fill"></div>
+            </div>
+            <div class="level-next" id="level-next"></div>
+          </div>
+        </div>
+
+        <div class="week-summary-card" id="week-summary-card"></div>
+
+        <div id="command-center"></div>
+
+        <div class="journal-card">
+          <div class="category-header">
+            <span class="category-title">Daily Journal</span>
+          </div>
+          <div class="journal-body">
+            <div class="field">
+              <label for="journal-win">Win of the day</label>
+              <input type="text" id="journal-win" maxlength="300" placeholder="What went right today?" />
+            </div>
+            <div class="field">
+              <label for="journal-improve">What I'd do differently</label>
+              <input type="text" id="journal-improve" maxlength="300" placeholder="What would you change about today?" />
+            </div>
+            <div class="field">
+              <label for="journal-free">Anything else on your mind</label>
+              <textarea id="journal-free" maxlength="2000" rows="4" placeholder="Free write..."></textarea>
+            </div>
+            <div class="journal-saved-note hidden" id="journal-saved-note">Saved.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- LEADERBOARD VIEW -->
+    <section class="view hidden" id="view-leaderboard" data-accent="amber">
+      <div class="shell">
+        <div class="view-header">
+          <h1>Leaderboard</h1>
+          <p>Ranked by current streak. Consistency wins.</p>
+        </div>
+        <div id="leaderboard-list"></div>
+      </div>
+    </section>
+
+    <!-- ANNOUNCEMENTS VIEW -->
+    <section class="view hidden" id="view-announcements" data-accent="red">
+      <div class="shell">
+        <div class="view-header">
+          <h1>Team Announcements</h1>
+          <p>From Nate and the team. Everyone can comment and react below.</p>
+        </div>
+        <div class="composer hidden" id="composer-announcements">
+          <input type="text" class="title-input" placeholder="Headline (optional)" maxlength="120" />
+          <textarea placeholder="Post an announcement..." maxlength="2000"></textarea>
+          <div class="composer-footer">
+            <span class="char-count">0 / 2000</span>
+            <button class="btn-post">Post Announcement</button>
+          </div>
+        </div>
+        <input type="text" id="search-announcements" class="post-search" placeholder="Search announcements..." />
+        <div class="feed-list" id="feed-announcements"></div>
+      </div>
+    </section>
+
+    <!-- ADMIN VIEW -->
+    <section class="view hidden" id="view-admin" data-accent="plain">
+      <div class="shell">
+        <div class="view-header">
+          <h1>Admin</h1>
+          <p>Manage announcement rights and admin access.</p>
+        </div>
+        <div id="admin-member-list"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- VIEW PROFILE MODAL (read-only, for clicking another member's name/avatar) -->
+  <div class="modal-overlay hidden" id="view-profile-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Profile</h2>
+        <button class="modal-close" id="view-profile-close">✕</button>
+      </div>
+      <div class="modal-body view-profile-body">
+        <div class="avatar-edit-row">
+          <div class="avatar-circle large" id="view-profile-avatar"></div>
+          <div>
+            <div class="view-profile-name" id="view-profile-name"></div>
+            <a href="#" target="_blank" rel="noopener noreferrer" class="view-profile-ig hidden" id="view-profile-ig">Instagram →</a>
+          </div>
+        </div>
+        <p class="view-profile-bio" id="view-profile-bio"></p>
+        <button class="btn-primary hidden" id="view-profile-message-btn">Message</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT PROFILE MODAL -->
+  <div class="modal-overlay hidden" id="profile-modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Edit Profile</h2>
+        <button class="modal-close" id="profile-modal-close">✕</button>
+      </div>
+
+      <div class="modal-body" id="profile-modal-fields">
+        <div class="avatar-edit-row">
+          <div class="avatar-circle large" id="modal-avatar-preview"></div>
+          <div>
+            <input type="file" id="avatar-file-input" accept="image/*" class="hidden" />
+            <button class="btn-ghost" id="avatar-upload-btn">Change Photo</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="profile-name-input">Name</label>
+          <input type="text" id="profile-name-input" maxlength="80" />
+        </div>
+        <div class="field">
+          <label for="profile-bio-input">Bio</label>
+          <textarea id="profile-bio-input" maxlength="280" rows="3" placeholder="A line or two about you..."></textarea>
+        </div>
+        <div class="field">
+          <label for="profile-ig-input">Instagram URL</label>
+          <input type="url" id="profile-ig-input" placeholder="https://instagram.com/yourhandle" />
+        </div>
+
+        <div class="notif-prefs">
+          <div class="notif-prefs-title">Email me when...</div>
+          <label class="admin-toggle"><input type="checkbox" id="notif-announcements" /> There's a new announcement</label>
+          <label class="admin-toggle"><input type="checkbox" id="notif-mentions" /> Someone mentions me</label>
+          <label class="admin-toggle"><input type="checkbox" id="notif-dms" /> I get a direct message</label>
+          <label class="admin-toggle"><input type="checkbox" id="notif-daily" /> The daily reminder goes out</label>
+        </div>
+
+        <div class="modal-error hidden" id="profile-modal-error"></div>
+        <button class="btn-primary" id="profile-save-btn">Save Changes</button>
+        <button class="replay-tutorial-btn" id="replay-tutorial-btn" type="button">Replay Welcome Tutorial</button>
+      </div>
+
+      <!-- CROP STAGE — shown after picking a photo, replaces the fields above until confirmed -->
+      <div class="crop-stage hidden" id="crop-stage">
+        <p class="crop-hint">Drag to reposition. Use the slider to zoom. This is how your photo will look.</p>
+        <div class="crop-canvas-wrap">
+          <canvas id="crop-canvas" width="280" height="280"></canvas>
+        </div>
+        <input type="range" id="crop-zoom" min="1" max="3" step="0.01" value="1" />
+        <div class="crop-actions">
+          <button class="btn-ghost" id="crop-cancel">Cancel</button>
+          <button class="btn-primary" id="crop-confirm">Use This Photo</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+  <!-- INTRO GATE — blocks the rest of the site until a member posts their introduction -->
+  <div class="intro-gate hidden" id="intro-gate-overlay">
+    <div class="intro-gate-inner">
+      <span class="wordmark">P2P</span>
+      <div class="view-header">
+        <h1>Welcome to P2P</h1>
+        <p>Before you dive in, post a quick introduction so the group knows who you are. Once you post, everything unlocks.</p>
+      </div>
+
+      <div class="composer" id="composer-intro-gate">
+        <input type="text" class="title-input" placeholder="Your name / where you're from (optional)" maxlength="120" />
+        <textarea placeholder="Introduce yourself — who you are, what you're working on, what brought you here..." maxlength="2000"></textarea>
+        <div class="composer-footer">
+          <span class="char-count">0 / 2000</span>
+          <button class="btn-post" id="intro-gate-submit">Post Introduction &amp; Unlock</button>
+        </div>
+      </div>
+
+      <div class="intro-gate-feed-label">What others have shared</div>
+      <div class="feed-list" id="intro-gate-feed"></div>
+    </div>
+  </div>
+
+  <!-- WELCOME TUTORIAL — shown once, right after a member's first Introductions post -->
+  <div class="modal-overlay hidden" id="tutorial-overlay">
+    <div class="modal-card tutorial-card">
+      <div class="modal-header">
+        <h2>Welcome to P2P</h2>
+      </div>
+      <div class="modal-body">
+        <p class="tutorial-intro">Quick tour of what's here — you won't see this again after this.</p>
+        <div class="tutorial-item"><span class="nav-dot dot-gold"></span><div><strong>Wins</strong> — post your wins, big or small. React and comment on each other's.</div></div>
+        <div class="tutorial-item"><span class="nav-dot dot-blue"></span><div><strong>The Board</strong> — links, questions, recommendations — anything worth sharing.</div></div>
+        <div class="tutorial-item"><span class="nav-dot dot-teal"></span><div><strong>Introductions</strong> — where you just posted. Check out everyone else's too.</div></div>
+        <div class="tutorial-item"><span class="nav-dot dot-plain"></span><div><strong>Live Chat</strong> — real-time group chat. Reply to specific messages, attach images.</div></div>
+        <div class="tutorial-item"><span class="nav-dot dot-purple"></span><div><strong>Members</strong> — search anyone in the group and DM them directly.</div></div>
+        <div class="tutorial-item"><span class="nav-dot dot-green"></span><div><strong>Daily Check-In</strong> — your Command Center. Training, business, social, sales — check it off daily and build a streak.</div></div>
+        <div class="tutorial-item"><span class="nav-dot dot-amber"></span><div><strong>Leaderboard</strong> — see how your streak stacks up against the group.</div></div>
+        <div class="tutorial-item"><span class="nav-dot dot-red"></span><div><strong>Announcements</strong> — updates from Nate and the team.</div></div>
+        <div class="tutorial-item"><span>🔔</span><div>The bell top-right lets you know when someone mentions you, comments on your post, or messages you.</div></div>
+        <button class="btn-primary" id="tutorial-close-btn">Got it — let's go</button>
+      </div>
+    </div>
+  </div>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
