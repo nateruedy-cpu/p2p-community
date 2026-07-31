@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>P2P</title>
+<link rel="stylesheet" href="style.css" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="auth-shell" class="auth-shell">
+  <div class="auth-card">
+    <span class="wordmark">P2P</span>
+    <span class="tagline">Physique to Profit</span>
+
+    <div id="auth-error" class="auth-error hidden"></div>
+
+    <form id="auth-form">
+      <div class="field hidden" id="name-field">
+        <label for="name-input">Name</label>
+        <input type="text" id="name-input" placeholder="Full name" autocomplete="name" />
+      </div>
+      <div class="field">
+        <label for="email-input">Email</label>
+        <input type="email" id="email-input" placeholder="you@email.com" autocomplete="email" required />
+      </div>
+      <div class="field">
+        <label for="password-input">Password</label>
+        <input type="password" id="password-input" placeholder="••••••••" autocomplete="current-password" required minlength="6" />
+      </div>
+      <button type="submit" class="btn-primary" id="auth-submit">Sign In</button>
+    </form>
+
+    <div class="auth-toggle">
+      <span id="toggle-text">New here?</span>
+      <button type="button" id="toggle-btn">Create an account</button>
+    </div>
+
+    <div class="auth-note">Members-only space for P2P. Your login is private to you.</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-shell" class="hidden">
+
+  <nav class="sidenav" id="sidenav">
+    <div class="sidenav-top">
+      <div class="wordmark small">P2P</div>
+      <div class="tagline">Physique to Profit</div>
+    </div>
+    <button class="nav-item active" data-view="wins">
+      <span class="nav-dot dot-gold"></span> Wins
+    </button>
+    <button class="nav-item" data-view="board">
+      <span class="nav-dot dot-blue"></span> The Board
+    </button>
+    <button class="nav-item" data-view="introductions">
+      <span class="nav-dot dot-teal"></span> Introductions
+    </button>
+    <button class="nav-item" data-view="chat">
+      <span class="nav-dot dot-plain"></span> Live Chat
+    </button>
+    <button class="nav-item" data-view="messages">
+      <span class="nav-dot dot-purple"></span> Messages <span class="nav-badge hidden" id="dm-unread-badge"></span>
+    </button>
+    <button class="nav-item" data-view="checkin">
+      <span class="nav-dot dot-green"></span> Daily Check-In
+    </button>
+    <button class="nav-item" data-view="announcements">
+      <span class="nav-dot dot-red"></span> Announcements
+    </button>
+    <div class="sidenav-bottom">
+      <div class="profile-row" id="profile-row">
+        <div class="avatar-circle" id="sidenav-avatar"></div>
+        <span class="member-name" id="current-member"></span>
+      </div>
+      <button class="btn-ghost" id="edit-profile-btn">Edit Profile</button>
+      <button class="btn-ghost" id="signout-btn">Sign Out</button>
+    </div>
+  </nav>
+
+  <button class="mobile-nav-toggle" id="mobile-nav-toggle">☰ Menu</button>
+
+  <main class="main-area">
+
+    <!-- WINS VIEW -->
+    <section class="view" id="view-wins" data-accent="gold">
+      <div class="shell">
+        <div class="view-header">
+          <h1>Wins</h1>
+          <p>Post it. Big or small — if it moved you forward, it counts.</p>
+        </div>
+        <div class="composer" id="composer-wins">
+          <input type="text" class="title-input" placeholder="Headline (optional)" maxlength="120" />
+          <textarea placeholder="What's the win?" maxlength="2000"></textarea>
+          <div class="composer-footer">
+            <span class="char-count">0 / 2000</span>
+            <button class="btn-post">Post Win</button>
+          </div>
+        </div>
+        <div class="feed-list" id="feed-wins"></div>
+      </div>
+    </section>
+
+    <!-- BOARD VIEW -->
+    <section class="view hidden" id="view-board" data-accent="blue">
+      <div class="shell">
+        <div class="view-header">
+          <h1>The Board</h1>
+          <p>Links, recommendations, questions — anything worth sharing with the group.</p>
+        </div>
+        <div class="composer" id="composer-board">
+          <input type="text" class="title-input" placeholder="Headline (optional)" maxlength="120" />
+          <textarea placeholder="Share a link, ask a question, drop a recommendation..." maxlength="2000"></textarea>
+          <div class="composer-footer">
+            <span class="char-count">0 / 2000</span>
+            <button class="btn-post">Post</button>
+          </div>
+        </div>
+        <div class="feed-list" id="feed-board"></div>
+      </div>
+    </section>
+
+    <!-- INTRODUCTIONS VIEW -->
+    <section class="view hidden" id="view-introductions" data-accent="teal">
+      <div class="shell">
+        <div class="view-header">
+          <h1>Introductions</h1>
+          <p>New to P2P? Post one introduction so the group knows who you are.</p>
+        </div>
+        <div class="composer" id="composer-introductions">
+          <input type="text" class="title-input" placeholder="Your name / where you're from (optional)" maxlength="120" />
+          <textarea placeholder="Introduce yourself — who you are, what you're working on, what brought you here..." maxlength="2000"></textarea>
+          <div class="composer-footer">
+            <span class="char-count">0 / 2000</span>
+            <button class="btn-post">Post Introduction</button>
+          </div>
+        </div>
+        <div class="feed-list" id="feed-introductions"></div>
+      </div>
+    </section>
+
+    <!-- CHAT VIEW -->
+    <section class="view hidden" id="view-chat" data-accent="plain">
+      <div class="chat-shell">
+        <div class="view-header">
+          <h1>Live Chat</h1>
+          <p>Real-time group chat. Tap Reply to respond to a specific message.</p>
+        </div>
+        <div class="chat-messages" id="chat-messages"></div>
+        <div class="reply-banner hidden" id="reply-banner">
+          <span id="reply-banner-text"></span>
+          <button id="reply-cancel">✕</button>
+        </div>
+        <div class="chat-input-row">
+          <input type="text" id="chat-input" placeholder="Type a message..." maxlength="1000" />
+          <button class="btn-post" id="chat-send">Send</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- MESSAGES VIEW -->
+    <section class="view hidden" id="view-messages" data-accent="purple">
+      <div class="messages-shell">
+        <div class="dm-list" id="dm-list">
+          <div class="view-header dm-list-header">
+            <h1>Messages</h1>
+          </div>
+          <div class="dm-conversation-list" id="dm-conversation-list"></div>
+        </div>
+        <div class="dm-thread" id="dm-thread">
+          <div class="dm-thread-empty" id="dm-thread-empty">Pick a member to message.</div>
+          <div class="dm-thread-active hidden" id="dm-thread-active">
+            <div class="dm-thread-header" id="dm-thread-header"></div>
+            <div class="dm-thread-messages" id="dm-thread-messages"></div>
+            <div class="chat-input-row">
+              <input type="text" id="dm-input" placeholder="Type a message..." maxlength="2000" />
+              <button class="btn-post" id="dm-send">Send</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CHECK-IN VIEW -->
+    <section class="view hidden" id="view-checkin" data-accent="green">
+      <div class="shell">
+        <div class="view-header">
+          <h1>Command Center</h1>
+          <p>Check off today's list across every area that matters. Consistency is the whole game.</p>
+        </div>
+
+        <label class="clients-toggle-row">
+          <input type="checkbox" id="clients-toggle" checked />
+          <span>I currently coach clients (shows the client check-in item below)</span>
+        </label>
+
+        <div class="streak-card">
+          <div class="streak-block">
+            <div class="streak-num" id="streak-count">0</div>
+            <div class="streak-label">Day Streak</div>
+          </div>
+          <div class="level-block">
+            <div class="level-name" id="level-name">Rookie</div>
+            <div class="level-progress-track">
+              <div class="level-progress-fill" id="level-progress-fill"></div>
+            </div>
+            <div class="level-next" id="level-next"></div>
+          </div>
+        </div>
+
+        <div class="week-summary-card" id="week-summary-card"></div>
+
+        <div id="command-center"></div>
+      </div>
+    </section>
+
+    <!-- ANNOUNCEMENTS VIEW -->
+    <section class="view hidden" id="view-announcements" data-accent="red">
+      <div class="shell">
+        <div class="view-header">
+          <h1>Team Announcements</h1>
+          <p>From Nate and the team. Everyone can comment and react below.</p>
+        </div>
+        <div class="composer hidden" id="composer-announcements">
+          <input type="text" class="title-input" placeholder="Headline (optional)" maxlength="120" />
+          <textarea placeholder="Post an announcement..." maxlength="2000"></textarea>
+          <div class="composer-footer">
+            <span class="char-count">0 / 2000</span>
+            <button class="btn-post">Post Announcement</button>
+          </div>
+        </div>
+        <div class="feed-list" id="feed-announcements"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- EDIT PROFILE MODAL -->
+  <div class="modal-overlay hidden" id="profile-modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Edit Profile</h2>
+        <button class="modal-close" id="profile-modal-close">✕</button>
+      </div>
+
+      <div class="modal-body" id="profile-modal-fields">
+        <div class="avatar-edit-row">
+          <div class="avatar-circle large" id="modal-avatar-preview"></div>
+          <div>
+            <input type="file" id="avatar-file-input" accept="image/*" class="hidden" />
+            <button class="btn-ghost" id="avatar-upload-btn">Change Photo</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="profile-name-input">Name</label>
+          <input type="text" id="profile-name-input" maxlength="80" />
+        </div>
+        <div class="field">
+          <label for="profile-bio-input">Bio</label>
+          <textarea id="profile-bio-input" maxlength="280" rows="3" placeholder="A line or two about you..."></textarea>
+        </div>
+        <div class="field">
+          <label for="profile-ig-input">Instagram URL</label>
+          <input type="url" id="profile-ig-input" placeholder="https://instagram.com/yourhandle" />
+        </div>
+
+        <div class="modal-error hidden" id="profile-modal-error"></div>
+        <button class="btn-primary" id="profile-save-btn">Save Changes</button>
+      </div>
+
+      <!-- CROP STAGE — shown after picking a photo, replaces the fields above until confirmed -->
+      <div class="crop-stage hidden" id="crop-stage">
+        <p class="crop-hint">Drag to reposition. Use the slider to zoom. This is how your photo will look.</p>
+        <div class="crop-canvas-wrap">
+          <canvas id="crop-canvas" width="280" height="280"></canvas>
+        </div>
+        <input type="range" id="crop-zoom" min="1" max="3" step="0.01" value="1" />
+        <div class="crop-actions">
+          <button class="btn-ghost" id="crop-cancel">Cancel</button>
+          <button class="btn-primary" id="crop-confirm">Use This Photo</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+  <!-- INTRO GATE — blocks the rest of the site until a member posts their introduction -->
+  <div class="intro-gate hidden" id="intro-gate-overlay">
+    <div class="intro-gate-inner">
+      <span class="wordmark">P2P</span>
+      <div class="view-header">
+        <h1>Welcome to P2P</h1>
+        <p>Before you dive in, post a quick introduction so the group knows who you are. Once you post, everything unlocks.</p>
+      </div>
+
+      <div class="composer" id="composer-intro-gate">
+        <input type="text" class="title-input" placeholder="Your name / where you're from (optional)" maxlength="120" />
+        <textarea placeholder="Introduce yourself — who you are, what you're working on, what brought you here..." maxlength="2000"></textarea>
+        <div class="composer-footer">
+          <span class="char-count">0 / 2000</span>
+          <button class="btn-post" id="intro-gate-submit">Post Introduction &amp; Unlock</button>
+        </div>
+      </div>
+
+      <div class="intro-gate-feed-label">What others have shared</div>
+      <div class="feed-list" id="intro-gate-feed"></div>
+    </div>
+  </div>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
